@@ -4,18 +4,15 @@ fn main() {
     dbg!(answer);
 }
 
-fn parse_numeric(numeric: &str) -> usize {
-    match numeric {
-        "one" => 1,
-        "two" => 2,
-        "three" => 3,
-        "four" => 4,
-        "five" => 5,
-        "six" => 6,
-        "seven" => 7,
-        "eight" => 8,
-        "nine" => 9,
-        n => n.parse().unwrap(),
+const DIGIT_WORDS: [&str; 9] = [
+    "one", "two", "three", "four", "five", "six", "seven", "eight", "nine",
+];
+
+fn parse_digits(digit: &str) -> usize {
+    if let Some(i) = DIGIT_WORDS.iter().position(|&d| d == digit) {
+        i + 1
+    } else {
+        digit.parse().expect("not a digit")
     }
 }
 
@@ -24,9 +21,7 @@ fn process(input: &str) -> String {
     for line in input.lines() {
         let mut matches = vec![];
 
-        for pat in [
-            "one", "two", "three", "four", "five", "six", "seven", "eight", "nine",
-        ] {
+        for pat in DIGIT_WORDS {
             matches.extend(line.match_indices(pat).collect::<Vec<_>>());
         }
         matches.extend(line.match_indices(char::is_numeric).collect::<Vec<_>>());
@@ -39,7 +34,7 @@ fn process(input: &str) -> String {
             _ => panic!("no numbers on line"),
         };
 
-        answer += format!("{}{}", parse_numeric(first), parse_numeric(last))
+        answer += format!("{}{}", parse_digits(first), parse_digits(last))
             .parse::<usize>()
             .unwrap();
     }
