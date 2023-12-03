@@ -1,4 +1,4 @@
-use std::str::FromStr;
+use std::{collections::HashMap, str::FromStr};
 
 fn main() {
     let input = include_str!("input.txt");
@@ -6,34 +6,7 @@ fn main() {
     dbg!(answer);
 }
 
-#[derive(Debug)]
-struct CubeSet {
-    red: usize,
-    green: usize,
-    blue: usize,
-}
-
-impl FromStr for CubeSet {
-    type Err = ParseGameError;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let mut blue = 0;
-        let mut red = 0;
-        let mut green = 0;
-
-        for cubes in s.split(',') {
-            let (n, cube) = cubes.trim().split_once(' ').unwrap();
-            match cube {
-                "red" => red = n.parse().unwrap(),
-                "green" => green = n.parse().unwrap(),
-                "blue" => blue = n.parse().unwrap(),
-                _ => panic!("invalid color"),
-            }
-        }
-
-        Ok(CubeSet { red, green, blue })
-    }
-}
+type CubeSet = HashMap<String, usize>;
 
 #[derive(Debug)]
 struct Game {
@@ -45,12 +18,11 @@ struct ParseGameError;
 
 impl Game {
     fn is_allowed(&self) -> bool {
-        for cube_set in &self.cube_sets {
-            if cube_set.red > 12 || cube_set.green > 13 || cube_set.blue > 14 {
-                return false;
-            }
-        }
-        true
+        self.cube_sets.iter().all(|set| {
+            *set.get("red").unwrap_or(&0) <= 12
+                && *set.get("green").unwrap_or(&0) <= 13
+                && *set.get("blue").unwrap_or(&0) <= 14
+        })
     }
 }
 
@@ -63,8 +35,15 @@ impl FromStr for Game {
         let id = header.split(' ').last().expect("should be 'Game ID'");
         let cube_sets = body
             .split(';')
-            .map(|set| set.parse().unwrap())
-            .collect::<Vec<CubeSet>>();
+            .map(|set| {
+                set.split(',')
+                    .map(|cubes| {
+                        let (n, cube) = cubes.trim().split_once(' ').unwrap();
+                        (cube.to_string(), n.parse().unwrap())
+                    })
+                    .collect::<CubeSet>()
+            })
+            .collect::<Vec<_>>();
 
         Ok(Game {
             id: id.parse().expect("should be a number"),
