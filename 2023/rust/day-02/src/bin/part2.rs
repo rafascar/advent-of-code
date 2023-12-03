@@ -1,4 +1,4 @@
-use std::str::FromStr;
+use std::{collections::HashMap, str::FromStr};
 
 fn main() {
     let input = include_str!("input.txt");
@@ -6,40 +6,7 @@ fn main() {
     dbg!(answer);
 }
 
-#[derive(Debug)]
-struct CubeSet {
-    red: usize,
-    green: usize,
-    blue: usize,
-}
-
-impl CubeSet {
-    fn power(&self) -> usize {
-        self.red * self.green * self.blue
-    }
-}
-
-impl FromStr for CubeSet {
-    type Err = ParseGameError;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let mut blue = 0;
-        let mut red = 0;
-        let mut green = 0;
-
-        for cubes in s.split(',') {
-            let (n, cube) = cubes.trim().split_once(' ').unwrap();
-            match cube {
-                "red" => red = n.parse().unwrap(),
-                "green" => green = n.parse().unwrap(),
-                "blue" => blue = n.parse().unwrap(),
-                _ => panic!("invalid color"),
-            }
-        }
-
-        Ok(CubeSet { red, green, blue })
-    }
-}
+type CubeSet = HashMap<String, usize>;
 
 #[derive(Debug)]
 struct Game {
@@ -50,23 +17,18 @@ struct ParseGameError;
 
 impl Game {
     fn min_cube_set(&self) -> CubeSet {
-        let mut red = 0;
-        let mut green = 0;
-        let mut blue = 0;
-
-        for cube_set in &self.cube_sets {
-            if cube_set.red > red {
-                red = cube_set.red;
-            }
-            if cube_set.green > green {
-                green = cube_set.green;
-            }
-            if cube_set.blue > blue {
-                blue = cube_set.blue;
+        let mut cube_set = CubeSet::new();
+        for set in &self.cube_sets {
+            for (color, &n) in set {
+                cube_set
+                    .entry(color.to_string())
+                    .and_modify(|v| {
+                        *v = (*v).max(n);
+                    })
+                    .or_insert(n);
             }
         }
-
-        CubeSet { red, green, blue }
+        dbg!(cube_set)
     }
 }
 
@@ -78,8 +40,15 @@ impl FromStr for Game {
 
         let cube_sets = body
             .split(';')
-            .map(|set| set.parse().unwrap())
-            .collect::<Vec<CubeSet>>();
+            .map(|set| {
+                set.split(',')
+                    .map(|cubes| {
+                        let (n, cube) = cubes.trim().split_once(' ').unwrap();
+                        (cube.to_string(), n.parse().unwrap())
+                    })
+                    .collect::<CubeSet>()
+            })
+            .collect::<Vec<_>>();
 
         Ok(Game { cube_sets })
     }
@@ -90,7 +59,9 @@ fn process(input: &str) -> String {
         .lines()
         .map(|line| line.parse::<Game>().unwrap())
         .map(|game| game.min_cube_set())
-        .fold(0, |acc, cube_set| acc + cube_set.power());
+        .fold(0, |acc, cube_set| {
+            acc + cube_set.values().product::<usize>()
+        });
 
     answer.to_string()
 }
