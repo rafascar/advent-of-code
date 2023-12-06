@@ -24,12 +24,12 @@ impl FromStr for Card {
 
         Ok(Card {
             winning: winning
-                .split(' ')
-                .filter_map(|n| n.trim().parse::<usize>().ok())
+                .split_whitespace()
+                .map(|n| n.parse::<usize>().unwrap())
                 .collect(),
             ours: ours
-                .split(' ')
-                .filter_map(|n| n.trim().parse::<usize>().ok())
+                .split_whitespace()
+                .map(|n| n.parse::<usize>().unwrap())
                 .collect(),
         })
     }
