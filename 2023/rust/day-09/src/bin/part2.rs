@@ -15,8 +15,13 @@ fn process(input: &str) -> String {
         let mut curr = history.collect::<Vec<isize>>();
         let mut diffs: Vec<isize>;
 
-        loop {
-            answer += curr.last().expect("should not be empty");
+        for i in 0.. {
+            let first = curr.first().expect("should not be empty");
+            if i % 2 == 0 {
+                answer += first;
+            } else {
+                answer -= first;
+            }
 
             diffs = curr.windows(2).map(|w| w[1] - w[0]).collect();
             if diffs.iter().all(|&n| n == 0) {
@@ -41,6 +46,6 @@ mod tests {
 10 13 16 21 30 45";
 
         let result = process(input);
-        assert_eq!(result, "114".to_string());
+        assert_eq!(result, "2".to_string());
     }
 }
