@@ -23,7 +23,7 @@ impl Galaxy {
             .filter(|c| universe[0][*c as usize] == '*')
             .count();
 
-        d as usize + (r + c) * 1_000_000 - (r + c)
+        d as usize + (r + c) * (1_000_000 - 1)
     }
 }
 
