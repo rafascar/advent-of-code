@@ -18,16 +18,13 @@ fn transpose(block: &str) -> String {
 fn find_mirror(block: &str) -> Option<usize> {
     let lines = block.lines().collect::<Vec<&str>>();
 
-    'outer: for r in 1..lines.len() {
-        for (i, j) in (0..r).rev().zip(r..lines.len()) {
-            if lines[i] != lines[j] {
-                continue 'outer;
-            }
-        }
-        return Some(r);
-    }
-
-    None
+    (1..lines.len()).find(|&r| {
+        lines[0..r]
+            .iter()
+            .rev()
+            .zip(lines[r..].iter())
+            .all(|(a, b)| a == b)
+    })
 }
 
 fn process(input: &str) -> String {
