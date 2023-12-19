@@ -18,13 +18,19 @@ fn transpose(block: &str) -> String {
 fn find_mirror(block: &str) -> Option<usize> {
     let lines = block.lines().collect::<Vec<&str>>();
 
-    'outer: for r in 1..lines.len() {
-        for (i, j) in (0..r).rev().zip(r..lines.len()) {
-            if lines[i] != lines[j] {
-                continue 'outer;
-            }
+    for r in 1..lines.len() {
+        let mut diff = 0;
+        for (i, j) in (0..r).rev().zip(r..) {
+            diff += lines[i]
+                .chars()
+                .zip(lines[j].chars())
+                .filter(|(a, b)| a != b)
+                .count();
         }
-        return Some(r);
+
+        if diff == 1 {
+            return Some(r);
+        }
     }
 
     None
@@ -70,6 +76,6 @@ mod tests {
 #....#..#";
 
         let result = process(input);
-        assert_eq!(result, "405".to_string());
+        assert_eq!(result, "400".to_string());
     }
 }
