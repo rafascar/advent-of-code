@@ -17,16 +17,15 @@ fn process(input: &str) -> String {
             }
             dish[i][j] = '.';
 
-            let mut y = Some(i - 1);
-            while y.is_some() && dish[y.unwrap()][j] == '.' {
-                y = y.unwrap().checked_sub(1);
-            }
+            let col = dish
+                .iter()
+                .take(i)
+                .rev()
+                .map(|line| line.get(j).unwrap())
+                .position(|&c| c == 'O' || c == '#')
+                .unwrap_or(i);
 
-            if let Some(y) = y {
-                dish[y + 1][j] = 'O';
-            } else {
-                dish[0][j] = 'O';
-            }
+            dish[i - col][j] = 'O';
         }
     }
 
