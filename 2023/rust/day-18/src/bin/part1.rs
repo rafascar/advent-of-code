@@ -1,4 +1,3 @@
-use core::panic;
 use std::collections::{HashSet, VecDeque};
 
 use itertools::Itertools;
@@ -12,8 +11,7 @@ fn main() {
 #[derive(Debug)]
 struct Instruction {
     direction: (i32, i32),
-    amount: u32,
-    color: String,
+    amount: u64,
 }
 
 fn flood_fill(grid: &mut Vec<Vec<char>>) {
@@ -48,22 +46,19 @@ fn process(input: &str) -> String {
     let instructions = input
         .lines()
         .map(|line| {
-            if let Some((direction, amount, color)) = line.splitn(3, ' ').collect_tuple() {
-                let direction = match direction {
-                    "R" => (0, 1),
-                    "L" => (0, -1),
-                    "D" => (1, 0),
-                    "U" => (-1, 0),
-                    _ => panic!("invalid direction: {direction}"),
-                };
-                let amount = amount.parse::<u32>().expect("should be a number");
+            if let Some((_, _, color)) = line.splitn(3, ' ').collect_tuple() {
                 let color = color[2..color.len() - 1].to_string();
+                let direction = match color.chars().last().expect("should not be empty") {
+                    '0' => (0, 1),
+                    '1' => (1, 0),
+                    '2' => (0, -1),
+                    '3' => (-1, 0),
+                    _ => panic!("invalid direction: {color}"),
+                };
+                let amount = u64::from_str_radix(&color[0..color.len() - 1], 16)
+                    .expect("should be a valid hex");
 
-                Instruction {
-                    direction,
-                    amount,
-                    color,
-                }
+                Instruction { direction, amount }
             } else {
                 panic!("Expected three elements")
             }
@@ -79,49 +74,16 @@ fn process(input: &str) -> String {
         })
         .collect::<Vec<_>>();
 
-    let padding = coords.iter().fold((0, 0), |acc, coord| {
-        (acc.0.min(coord.0), acc.1.min(coord.1))
-    });
+    // Shoelace Formula
+    // https://en.wikipedia.org/wiki/Shoelace_formula
+    let area = (coords.windows(2).fold(0isize, |acc, p| {
+        acc + p[0].0 as isize * p[1].1 as isize - p[1].0 as isize * p[0].1 as isize
+    }) / 2)
+        .abs();
 
-    let coords = coords
-        .iter()
-        .map(|coord| (coord.0 + padding.0.abs(), coord.1 + padding.1.abs()))
-        .collect::<Vec<_>>();
-
-    println!("{coords:?}");
-
-    let (height, width) = coords
-        .iter()
-        .fold((0, 0), |acc, c| (acc.0.max(c.0 + 3), acc.1.max(c.1 + 3)));
-    println!("{height:?},{width:?}");
-
-    let mut grid: Vec<Vec<char>> = (0..height)
-        .map(|_| (0..width).map(|_| '.').collect())
-        .collect();
-
-    let (i, j) = coords[coords.len() - 1];
-    let mut p = (i + 1, j + 1);
-    for instruction in instructions.iter() {
-        for _ in 0..instruction.amount {
-            p = (p.0 + instruction.direction.0, p.1 + instruction.direction.1);
-            grid[p.0 as usize][p.1 as usize] = '#';
-        }
-    }
-
-    for line in grid.iter() {
-        println!("{}", line.iter().collect::<String>());
-    }
-
-    flood_fill(&mut grid);
-    for line in grid.iter() {
-        println!("{}", line.iter().collect::<String>());
-    }
-
-    grid.iter()
-        .flatten()
-        .filter(|&tile| *tile == '#' || *tile == '.')
-        .count()
-        .to_string()
+    // Pick's Theorem
+    // https://en.wikipedia.org/wiki/Pick%27s_theorem
+    (area as f64 - 0.5 * coords.len() as f64 + 1.0 + coords.len() as f64).to_string()
 }
 
 #[cfg(test)]
@@ -146,6 +108,6 @@ L 2 (#015232)
 U 2 (#7a21e3)";
 
         let result = process(input);
-        assert_eq!(result, "62".to_string());
+        assert_eq!(result, "952408144115".to_string());
     }
 }
