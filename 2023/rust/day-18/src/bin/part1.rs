@@ -1,4 +1,5 @@
 use core::panic;
+use std::collections::{HashSet, VecDeque};
 
 use itertools::Itertools;
 
@@ -15,12 +16,32 @@ struct Instruction {
     color: String,
 }
 
-type Color = String;
+fn flood_fill(grid: &mut Vec<Vec<char>>) {
+    let width = grid[0].len();
+    let height = grid.len();
 
-#[derive(Debug)]
-enum Tile {
-    Dirt,
-    Hole(Color),
+    let mut frontier = VecDeque::from([(0, 0)]);
+    let mut visited: HashSet<(usize, usize)> = HashSet::new();
+
+    while let Some((i, j)) = frontier.pop_back() {
+        visited.insert((i, j));
+
+        let tile = &mut grid[i][j];
+        if *tile == '#' {
+            continue;
+        } else if *tile == '.' {
+            *tile = 'x';
+        }
+
+        for (di, dj) in [(1, 0), (-1, 0), (0, 1), (0, -1)] {
+            let ni = i.wrapping_add_signed(di);
+            let nj = j.wrapping_add_signed(dj);
+
+            if ni < height && nj < width && !visited.contains(&(ni, nj)) {
+                frontier.push_back((ni, nj));
+            }
+        }
+    }
 }
 
 fn process(input: &str) -> String {
@@ -49,61 +70,56 @@ fn process(input: &str) -> String {
         })
         .collect::<Vec<Instruction>>();
 
-    let width = instructions
+    let coords = instructions
         .iter()
-        .filter(|i| i.direction.0 == 0)
-        .scan(1, |state, i| {
-            *state += i.direction.1 * i.amount as i32;
+        .flat_map(|i| std::iter::repeat(i.direction).take(i.amount as usize))
+        .scan((0, 0), |state, dir| {
+            *state = (state.0 + dir.0, state.1 + dir.1);
             Some(*state)
         })
-        .max()
-        .unwrap_or(0);
+        .collect::<Vec<_>>();
 
-    let height = instructions
+    let padding = coords.iter().fold((0, 0), |acc, coord| {
+        (acc.0.min(coord.0), acc.1.min(coord.1))
+    });
+
+    let coords = coords
         .iter()
-        .filter(|i| i.direction.1 == 0)
-        .scan(1, |state, i| {
-            *state += i.direction.0 * i.amount as i32;
-            Some(*state)
-        })
-        .max()
-        .unwrap_or(0);
+        .map(|coord| (coord.0 + padding.0.abs(), coord.1 + padding.1.abs()))
+        .collect::<Vec<_>>();
+
+    println!("{coords:?}");
+
+    let (height, width) = coords
+        .iter()
+        .fold((0, 0), |acc, c| (acc.0.max(c.0 + 3), acc.1.max(c.1 + 3)));
+    println!("{height:?},{width:?}");
 
     let mut grid: Vec<Vec<char>> = (0..height)
         .map(|_| (0..width).map(|_| '.').collect())
         .collect();
 
-    let mut p = (0usize, 0usize);
+    let (i, j) = coords[coords.len() - 1];
+    let mut p = (i + 1, j + 1);
     for instruction in instructions.iter() {
         for _ in 0..instruction.amount {
-            p = (
-                p.0.wrapping_add_signed(instruction.direction.0 as isize),
-                p.1.wrapping_add_signed(instruction.direction.1 as isize),
-            );
-            grid[p.0][p.1] = '#';
+            p = (p.0 + instruction.direction.0, p.1 + instruction.direction.1);
+            grid[p.0 as usize][p.1 as usize] = '#';
         }
     }
 
-    for line in grid.iter_mut() {
-        let mut holes = 0;
-        let mut seen = false;
+    for line in grid.iter() {
+        println!("{}", line.iter().collect::<String>());
+    }
 
-        for tile in line.iter_mut() {
-            if *tile == '#' && !seen {
-                seen = true;
-                holes += 1;
-            } else if *tile == '.' {
-                if holes % 2 != 0 {
-                    *tile = '#';
-                }
-                seen = false;
-            }
-        }
+    flood_fill(&mut grid);
+    for line in grid.iter() {
+        println!("{}", line.iter().collect::<String>());
     }
 
     grid.iter()
         .flatten()
-        .filter(|&tile| *tile == '#')
+        .filter(|&tile| *tile == '#' || *tile == '.')
         .count()
         .to_string()
 }
