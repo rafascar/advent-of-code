@@ -7,7 +7,7 @@ fn main() {
 }
 
 #[derive(Debug, PartialEq, Clone)]
-struct Part(HashMap<char, usize>);
+struct Part(HashMap<char, (usize, usize)>);
 
 #[derive(Debug, PartialEq)]
 struct Workflow {
@@ -50,9 +50,9 @@ impl From<&str> for Rule {
 }
 
 impl Rule {
-    fn evaluate(&self, part: &Part) -> (Part, &Output) {
+    fn evaluate(&self, part: &Part) -> (Part, &Output, Part) {
         if self.cond == "*" {
-            return (part.clone(), &self.output);
+            return (part.clone(), &self.output, part.clone());
         }
 
         let mut cond = self.cond.chars();
@@ -64,11 +64,25 @@ impl Rule {
             .parse::<usize>()
             .expect("should be a number");
 
-        let rating = if op == '<' { value - 1 } else { 4000 - value };
-        let mut ratings = part.0.clone();
-        ratings.insert(name, rating);
+        let mut new_ratings = part.0.clone();
+        let mut next_ratings = part.0.clone();
 
-        (Part(ratings), &self.output)
+        let old_rating = part.0[&name];
+        let new_rating;
+        let next_rating;
+
+        if op == '<' {
+            new_rating = (old_rating.0, value - 1);
+            next_rating = (value, old_rating.1);
+        } else {
+            new_rating = (value + 1, old_rating.1);
+            next_rating = (old_rating.0, value);
+        }
+
+        new_ratings.insert(name, new_rating);
+        next_ratings.insert(name, next_rating);
+
+        (Part(new_ratings), &self.output, Part(next_ratings))
     }
 }
 
@@ -106,10 +120,10 @@ fn process(input: &mut &str) -> String {
 
     let workflow = &workflows["in"];
     let part = Part(HashMap::from([
-        ('x', 4000),
-        ('m', 4000),
-        ('a', 4000),
-        ('s', 4000),
+        ('x', (1, 4000)),
+        ('m', (1, 4000)),
+        ('a', (1, 4000)),
+        ('s', (1, 4000)),
     ]));
     let mut accepted_parts = vec![];
 
@@ -117,8 +131,7 @@ fn process(input: &mut &str) -> String {
 
     accepted_parts
         .iter()
-        .inspect(|part| println!("{part:?}"))
-        .map(|part| part.0.values().product::<usize>())
+        .map(|part| part.0.values().map(|(s, e)| e - s + 1).product::<usize>())
         .sum::<usize>()
         .to_string()
 }
@@ -129,19 +142,18 @@ fn pipe(
     part: Part,
     accepted_parts: &mut Vec<Part>,
 ) {
-    println!("{workflow:?}");
-    println!("{part:?}");
-    println!("{accepted_parts:?}");
-    println!();
+    let mut current_part = part.clone();
 
     for rule in &workflow.rules {
-        let (p, o) = rule.evaluate(&part);
+        let (new_part, output, next_part) = rule.evaluate(&current_part);
 
-        if *o == Output::Accept {
-            return accepted_parts.push(part.clone());
-        } else if let Output::Workflow(w) = o {
-            pipe(workflows, &workflows[w], p, accepted_parts);
+        if *output == Output::Accept {
+            accepted_parts.push(new_part.clone());
+        } else if let Output::Workflow(w) = output {
+            pipe(workflows, &workflows[w], new_part.clone(), accepted_parts);
         }
+
+        current_part = next_part;
     }
 }
 
@@ -223,10 +235,10 @@ hdj{m>838:A,pv}
     #[test]
     fn test_rule_evaluate_gt() {
         let part = Part(HashMap::from([
-            ('x', 4000),
-            ('m', 4000),
-            ('a', 4000),
-            ('s', 4000),
+            ('x', (1, 4000)),
+            ('m', (1, 4000)),
+            ('a', (1, 4000)),
+            ('s', (1, 4000)),
         ]));
 
         let rule = Rule {
@@ -234,18 +246,19 @@ hdj{m>838:A,pv}
             output: Output::Reject,
         };
 
-        let (part, output) = rule.evaluate(&part);
-        assert_eq!(part.0[&'a'], 2284);
+        let (new_part, output, next_part) = rule.evaluate(&part);
+        assert_eq!(new_part.0[&'a'], (1717, 4000));
+        assert_eq!(next_part.0[&'a'], (1, 1716));
         assert_eq!(*output, Output::Reject);
     }
 
     #[test]
     fn test_rule_evaluate_lt() {
         let part = Part(HashMap::from([
-            ('x', 4000),
-            ('m', 4000),
-            ('a', 4000),
-            ('s', 4000),
+            ('x', (1, 4000)),
+            ('m', (1, 4000)),
+            ('a', (1, 4000)),
+            ('s', (1, 4000)),
         ]));
 
         let rule = Rule {
@@ -253,8 +266,9 @@ hdj{m>838:A,pv}
             output: Output::Reject,
         };
 
-        let (part, output) = rule.evaluate(&part);
-        assert_eq!(part.0[&'a'], 1715);
+        let (new_part, output, next_part) = rule.evaluate(&part);
+        assert_eq!(new_part.0[&'a'], (1, 1715));
+        assert_eq!(next_part.0[&'a'], (1716, 4000));
         assert_eq!(*output, Output::Reject);
     }
 }
