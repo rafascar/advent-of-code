@@ -21,8 +21,7 @@ impl Brick {
         let (ys0, ys1) = (self.coords.1, self.coords.1 + self.dimensions.1);
         let (ye0, ye1) = (other.coords.1, other.coords.1 + other.dimensions.1);
 
-        ((xs0 == xe0 && xs1 == xe1) || (xs0 < xe1 && xe0 < xs1))
-            && ((ys0 < ye1 && ye0 < ys1) || (ys0 == ye0 && ys1 == ye1))
+        xs0 < xe1 && xe0 < xs1 && ys0 < ye1 && ye0 < ys1
     }
 
     fn supports<'a>(&self, pile: &'a [Brick]) -> Vec<&'a Brick> {
@@ -80,15 +79,18 @@ fn process(input: &str) -> String {
     let mut pile: Vec<Brick> = vec![];
 
     'outer: while let Some(mut brick) = bricks.pop() {
-        let p = pile.clone();
-        for (i, other) in p.iter().rev().enumerate() {
+        let mut p = pile.clone();
+        p.sort_by_key(|b| b.coords.2 + b.dimensions.2);
+
+        for other in p.iter().rev() {
             if brick.intersects_with(other) {
                 brick.coords.2 = other.coords.2 + other.dimensions.2;
-                pile.insert(pile.len() - i, brick);
+                pile.push(brick);
                 continue 'outer;
             }
         }
 
+        brick.coords.2 = 1;
         pile.push(brick);
     }
 
@@ -102,7 +104,6 @@ fn process(input: &str) -> String {
             }
         }
 
-        // println!("{brick:?}");
         count += 1;
     }
 
@@ -124,6 +125,6 @@ mod tests {
 1,1,8~1,1,9";
 
         let result = process(input);
-        assert_eq!(result, "7".to_string());
+        assert_eq!(result, "5".to_string());
     }
 }
