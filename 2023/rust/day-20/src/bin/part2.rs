@@ -3,6 +3,8 @@ use std::{
     fmt::{Debug, Display},
 };
 
+use num::integer::lcm;
+
 fn main() {
     let input = include_str!("input.txt");
     let answer = process(input);
@@ -168,18 +170,40 @@ fn parse(input: &str) -> HashMap<String, Module> {
 fn process(input: &str) -> String {
     let mut modules = parse(input);
 
-    let mut button_presses = 0;
-    loop {
+    let mut feed = String::new();
+    for line in input.lines() {
+        let (left, right) = line.split_once(" -> ").expect("should find an arrow");
+        let right = right.split(", ").collect::<Vec<_>>();
+
+        if right.contains(&"rx") {
+            feed = left[1..].to_string();
+        }
+    }
+
+    let mut seen: HashMap<String, usize> = HashMap::new();
+    for line in input.lines() {
+        let (left, right) = line.split_once(" -> ").expect("should find an arrow");
+        let right = right.split(", ").collect::<Vec<_>>();
+
+        if right.contains(&feed.as_str()) {
+            seen.insert(left[1..].to_string(), 0);
+        }
+    }
+
+    'outer: for presses in 1.. {
         let mut pulses: VecDeque<Pulse> = VecDeque::from([Pulse {
             from: "button".to_string(),
             to: "broadcaster".to_string(),
             high: false,
         }]);
-        button_presses += 1;
 
         while let Some(pulse) = pulses.pop_front() {
-            if !pulse.high && pulse.to == "rx" {
-                return button_presses.to_string();
+            if pulse.high && seen.contains_key(&pulse.from) && seen[&pulse.from] == 0 {
+                seen.insert(pulse.from.to_string(), presses);
+            }
+
+            if seen.values().all(|&v| v != 0) {
+                break 'outer;
             }
 
             if let Some(module) = modules.get_mut(&pulse.to) {
@@ -192,6 +216,8 @@ fn process(input: &str) -> String {
             }
         }
     }
+
+    seen.into_values().fold(1, lcm).to_string()
 }
 
 #[cfg(test)]
