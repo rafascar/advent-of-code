@@ -1,4 +1,4 @@
-use std::collections::{BinaryHeap, HashMap};
+use std::collections::{BinaryHeap, HashMap, HashSet};
 
 fn main() {
     let input = include_str!("input.txt");
@@ -6,111 +6,45 @@ fn main() {
     dbg!(answer);
 }
 
-struct Grid(Vec<Vec<u32>>);
-
-impl Grid {
-    fn neighbors(&self, pos: Position) -> Vec<Position> {
-        [
-            (pos.0.wrapping_add(1), pos.1),
-            (pos.0.wrapping_sub(1), pos.1),
-            (pos.0, pos.1.wrapping_add(1)),
-            (pos.0, pos.1.wrapping_sub(1)),
-        ]
-        .into_iter()
-        .filter(|&(i, j)| i < self.height() && j < self.width())
-        .collect()
-    }
-
-    fn cost(&self, pos: Position) -> u32 {
-        self.0[pos.0][pos.1]
-    }
-
-    fn height(&self) -> usize {
-        self.0.len()
-    }
-
-    fn width(&self) -> usize {
-        self.0[0].len()
-    }
-
-    fn start(&self) -> Position {
-        (0, 0)
-    }
-
-    fn end(&self) -> Position {
-        (self.height() - 1, self.width() - 1)
-    }
-}
-
-type Position = (usize, usize);
-
-#[derive(Debug, Eq, PartialEq, Clone)]
-struct State {
-    cost: u32,
-    position: Position,
-}
-
-impl Ord for State {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        other
-            .cost
-            .cmp(&self.cost)
-            .then_with(|| self.position.cmp(&other.position))
-    }
-}
-
-impl PartialOrd for State {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
 fn process(input: &str) -> String {
-    let grid = Grid(
-        input
-            .lines()
-            .map(|line| {
-                line.chars()
-                    .map(|c| c.to_digit(10).expect("should be a digit"))
-                    .collect()
-            })
-            .collect(),
-    );
+    let grid = input
+        .lines()
+        .map(|line| {
+            line.chars()
+                .map(|c| c.to_digit(10).expect("should be a number"))
+                .collect::<Vec<_>>()
+        })
+        .collect::<Vec<_>>();
 
-    let mut frontier: BinaryHeap<State> = BinaryHeap::new();
-    frontier.push(State {
-        cost: 0,
-        position: grid.start(),
-    });
+    // (hl, r, c, dr, dc, n)
+    let mut heap = BinaryHeap::from([(0isize, 0usize, 0usize, 0isize, 0isize, 0)]);
+    // (r, c, dr, dc, n)
+    let mut seen = HashSet::new();
 
-    let mut cost_so_far: HashMap<Position, u32> = HashMap::new();
-    let mut came_from: HashMap<Position, Position> = HashMap::new();
+    while let Some((hl, r, c, dr, dc, n)) = heap.pop() {
+        if seen.contains(&(r, c, dr, dc, n)) {
+            continue;
+        }
+        seen.insert((r, c, dr, dc, n));
 
-    while let Some(current) = frontier.pop() {
-        if current.position == grid.end() {
-            break;
+        if r == grid.len() - 1 && c == grid[0].len() - 1 {
+            return hl.abs().to_string();
         }
 
-        for next in grid.neighbors(current.position) {
-            let new_cost = current.cost + grid.cost(next);
-            if new_cost < *cost_so_far.get(&next).unwrap_or(&u32::MAX) {
-                cost_so_far.insert(next, new_cost);
-                frontier.push(State {
-                    cost: new_cost,
-                    position: next,
-                });
-                came_from.insert(next, current.position);
+        for (ndr, ndc) in [(1, 0), (-1, 0), (0, 1), (0, -1)] {
+            if (ndr, ndc) == (-dr, -dc) {
+                continue;
+            }
+
+            let nn = if (ndr, ndc) == (dr, dc) { n + 1 } else { 1 };
+
+            let nr = r.wrapping_add_signed(ndr);
+            let nc = c.wrapping_add_signed(ndc);
+            if nr < grid.len() && nc < grid[0].len() && nn <= 3 {
+                heap.push((hl - grid[nr][nc] as isize, nr, nc, ndr, ndc, nn));
             }
         }
     }
-
-    let mut path = vec![];
-    let mut current = grid.end();
-    while current != grid.start() {
-        path.push(current);
-        current = *came_from.get(&current).expect("should exist");
-    }
-    println!("{:?}", path.iter().rev().collect::<Vec<_>>());
 
     "".to_string()
 }
