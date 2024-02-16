@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 fn main() {
     let input = include_str!("input.txt");
     let answer = process(input);
@@ -10,10 +12,11 @@ fn process(input: &str) -> String {
         .map(|line| line.chars().collect::<Vec<char>>())
         .collect();
 
-    for x in 0..1000000000 {
-        if x % 1000000 == 0 {
-            println!("{}", x);
-        }
+    let mut seen = HashSet::from([dish.clone()]);
+    let mut dishes = vec![dish.clone()];
+
+    let mut iter = 0;
+    loop {
         // Roll north.
         for i in 1..dish.len() {
             for j in 0..dish[0].len() {
@@ -89,12 +92,22 @@ fn process(input: &str) -> String {
                 dish[i][j + col - 1] = 'O';
             }
         }
+
+        iter += 1;
+        if seen.contains(&dish) {
+            break;
+        }
+
+        seen.insert(dish.clone());
+        dishes.push(dish.clone());
     }
 
-    for line in dish.iter() {
-        println!("{}", line.iter().collect::<String>());
-    }
+    let first = dishes
+        .iter()
+        .position(|d| d == &dish)
+        .expect("cycled dish should exist on array");
 
+    let dish = &dishes[(1_000_000_000 - first) % (iter - first) + first];
     dish.iter()
         .enumerate()
         .fold(0, |acc, (i, line)| {
@@ -120,6 +133,6 @@ O.#..O.#.#
 #....###..
 #OO..#....";
         let result = process(input);
-        assert_eq!(result, "135".to_string());
+        assert_eq!(result, "64".to_string());
     }
 }
