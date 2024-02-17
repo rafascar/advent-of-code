@@ -94,3 +94,62 @@ In this example, if the Elf's goal was to get exactly `6` more steps today, he c
 However, the Elf _actually needs to get `64` steps today_, and the map he's handed you is much larger than the example map.
 
 Starting from the garden plot marked `S` on your map, _how many garden plots could the Elf reach in exactly `64` steps?_
+
+### Part Two
+
+The Elf seems confused by your answer until he realizes his mistake: he was reading from a <span title="Next up: 729.">list</span> of his favorite numbers that are both perfect squares and perfect cubes, not his step counter.
+
+The _actual_ number of steps he needs to get today is exactly _`26501365`_.
+
+He also points out that the garden plots and rocks are set up so that the map _repeats infinitely_ in every direction.
+
+So, if you were to look one additional map-width or map-height out from the edge of the example map above, you would find that it keeps repeating:
+
+    .................................
+    .....###.#......###.#......###.#.
+    .###.##..#..###.##..#..###.##..#.
+    ..#.#...#....#.#...#....#.#...#..
+    ....#.#........#.#........#.#....
+    .##...####..##...####..##...####.
+    .##..#...#..##..#...#..##..#...#.
+    .......##.........##.........##..
+    .##.#.####..##.#.####..##.#.####.
+    .##..##.##..##..##.##..##..##.##.
+    .................................
+    .................................
+    .....###.#......###.#......###.#.
+    .###.##..#..###.##..#..###.##..#.
+    ..#.#...#....#.#...#....#.#...#..
+    ....#.#........#.#........#.#....
+    .##...####..##..S####..##...####.
+    .##..#...#..##..#...#..##..#...#.
+    .......##.........##.........##..
+    .##.#.####..##.#.####..##.#.####.
+    .##..##.##..##..##.##..##..##.##.
+    .................................
+    .................................
+    .....###.#......###.#......###.#.
+    .###.##..#..###.##..#..###.##..#.
+    ..#.#...#....#.#...#....#.#...#..
+    ....#.#........#.#........#.#....
+    .##...####..##...####..##...####.
+    .##..#...#..##..#...#..##..#...#.
+    .......##.........##.........##..
+    .##.#.####..##.#.####..##.#.####.
+    .##..##.##..##..##.##..##..##.##.
+    .................................
+    
+
+This is just a tiny three-map-by-three-map slice of the inexplicably-infinite farm layout; garden plots and rocks repeat as far as you can see. The Elf still starts on the one middle tile marked `S`, though - every other repeated `S` is replaced with a normal garden plot (`.`).
+
+Here are the number of reachable garden plots in this new infinite version of the example map for different numbers of steps:
+
+*   In exactly `6` steps, he can still reach _`16`_ garden plots.
+*   In exactly `10` steps, he can reach any of _`50`_ garden plots.
+*   In exactly `50` steps, he can reach _`1594`_ garden plots.
+*   In exactly `100` steps, he can reach _`6536`_ garden plots.
+*   In exactly `500` steps, he can reach _`167004`_ garden plots.
+*   In exactly `1000` steps, he can reach _`668697`_ garden plots.
+*   In exactly `5000` steps, he can reach _`16733044`_ garden plots.
+
+However, the step count the Elf needs is much larger! Starting from the garden plot marked `S` on your infinite map, _how many garden plots could the Elf reach in exactly `26501365` steps?_
