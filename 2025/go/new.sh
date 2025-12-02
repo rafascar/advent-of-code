@@ -35,6 +35,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+    "time"
 )
 
 func main() {
@@ -44,12 +45,16 @@ func main() {
 	}
 	defer input.Close()
 
+	start := time.Now()
 	result := solve(bufio.NewScanner(input))
-	fmt.Println(result)
+	fmt.Printf("%s, took %s\n", result, time.Since(start))
 }
 
 func solve(scanner *bufio.Scanner) string {
 	var ans int
+
+
+
 	return strconv.Itoa(ans)
 }
 EOF
