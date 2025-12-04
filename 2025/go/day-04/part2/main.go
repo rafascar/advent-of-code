@@ -37,20 +37,21 @@ func solve(scanner *bufio.Scanner) string {
 	for {
 		var removed int
 
-		for i := range width {
-			for j := range height {
+		for x := range width {
+			for y := range height {
 				// Not a roll of paper.
-				if grid[j][i] != "@" {
+				if grid[y][x] != "@" {
 					continue
 				}
 
 				var count int
 				for _, dir := range dirs {
+					nx, ny := x+dir[0], y+dir[1]
 					// Check if moving in this direction would take us out of bounds.
-					if (dir[0] < 0 && i == 0) || (dir[0] > 0 && i == (width-1)) || (dir[1] < 0 && j == 0) || (dir[1] > 0 && j == (height-1)) {
+					if nx < 0 || ny < 0 || nx > (width-1) || ny > (height-1) {
 						continue
 					}
-					if grid[j+dir[1]][i+dir[0]] == "@" {
+					if grid[ny][nx] == "@" {
 						count++
 						if count == 4 {
 							break
@@ -60,7 +61,7 @@ func solve(scanner *bufio.Scanner) string {
 
 				if count < 4 {
 					// Remove paper.
-					grid[j][i] = "."
+					grid[y][x] = "."
 					removed++
 				}
 			}
