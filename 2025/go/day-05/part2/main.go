@@ -47,19 +47,16 @@ func solve(scanner *bufio.Scanner) string {
 	}
 	slices.SortFunc(ranges, func(a, b Range) int { return cmp.Compare(a.Start, b.Start) })
 
-	mergedRanges := ranges[:1]
+	curr := ranges[0]
 	for _, r := range ranges[1:] {
-		mr := &mergedRanges[len(mergedRanges)-1]
-		if r.Start <= mr.End {
-			mr.End = max(r.End, mr.End)
+		if r.Start <= curr.End {
+			curr.End = max(r.End, curr.End)
 		} else {
-			mergedRanges = append(mergedRanges, r)
+			ans += curr.End - curr.Start + 1
+			curr = r
 		}
 	}
-
-	for _, r := range mergedRanges {
-		ans += r.End - r.Start + 1
-	}
+	ans += curr.End - curr.Start + 1
 
 	return strconv.Itoa(ans)
 }
