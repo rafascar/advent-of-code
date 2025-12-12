@@ -58,39 +58,37 @@ func solve(scanner *bufio.Scanner, count int) string {
 	slices.SortFunc(conns, func(a, b Connection) int { return cmp.Compare(a.Distance, b.Distance) })
 
 	graph := make(map[Box][]Box)
-	for _, conn := range conns[:count] {
+
+	for _, conn := range conns {
 		graph[conn.A] = append(graph[conn.A], conn.B)
 		graph[conn.B] = append(graph[conn.B], conn.A)
-	}
 
-	visited := make(map[Box]struct{})
-	var circuits []int
-	for box := range graph {
-		if _, ok := visited[box]; ok {
-			continue
+		if bfs(graph, boxes[0]) == len(boxes) {
+			ans = conn.A[0] * conn.B[0]
+			break
 		}
-
-		var size int
-		queue := []Box{box}
-
-		for len(queue) > 0 {
-			curr := queue[0]
-			queue = queue[1:]
-
-			for _, next := range graph[curr] {
-				if _, ok := visited[next]; !ok {
-					visited[next] = struct{}{}
-					queue = append(queue, next)
-					size++
-				}
-			}
-		}
-		circuits = append(circuits, size)
 	}
-
-	slices.Sort(circuits)
-	slices.Reverse(circuits)
-	ans = circuits[0] * circuits[1] * circuits[2]
 
 	return strconv.Itoa(ans)
+}
+
+func bfs(graph map[Box][]Box, start Box) int {
+	var size int
+	visited := make(map[Box]struct{})
+
+	queue := []Box{start}
+	for len(queue) > 0 {
+		curr := queue[0]
+		queue = queue[1:]
+
+		for _, next := range graph[curr] {
+			if _, ok := visited[next]; !ok {
+				visited[next] = struct{}{}
+				queue = append(queue, next)
+				size++
+			}
+		}
+	}
+
+	return size
 }
